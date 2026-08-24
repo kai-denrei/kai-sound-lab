@@ -1,0 +1,20 @@
+{
+  "name": "kai-sound-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A library of synthesized, reusable, parameterized sounds — recipes as the canonical asset, WAV as reproducible export — with educational metadata on the psychology of sound in web and game design.",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "./scripts/bust.sh --quiet || true",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "bust": "./scripts/bust.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

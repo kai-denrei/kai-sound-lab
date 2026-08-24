@@ -1,0 +1,6 @@
+# Deban decision log — local working memory, not a published artifact
+.deban/
+
+.DS_Store
+node_modules/
+dist/
