@@ -66,11 +66,17 @@ export const curatedSets: CuratedSet[] = [
     name: "Electricity & Energy",
     blurb: "Arcs, buzzes, hums and power gestures — the sound of current doing work.",
   },
+  {
+    id: "whooshes",
+    name: "Whooshes & Movement",
+    blurb: "Air cuts, swishes and passes — the reusable vocabulary of motion.",
+  },
 ];
 
 const KENNEY_INTERFACE = "https://kenney.nl/assets/interface-sounds";
 const KENNEY_IMPACT = "https://kenney.nl/assets/impact-sounds";
 const KENNEY_SCIFI = "https://kenney.nl/assets/sci-fi-sounds";
+const KENNEY_RPG = "https://kenney.nl/assets/rpg-audio";
 
 const kenney = (
   setId: string,
@@ -395,5 +401,77 @@ export const curatedSounds: CuratedSound[] = [
     license: "CC-BY-3.0",
     attributionRequired: true,
     note: "Seamlessly loopable sine-wave drone processed to read as a large transformer or computer core — the deep fundamental at 50–60 Hz is the mains-hum register this set is anchored to.",
+  },
+
+  // ---- Whooshes & Movement (Kenney RPG Audio + Interface Sounds CC0; OpenGameArt CC0) ----
+  kenney("whooshes", "knife-slice", "Knife slice", 600, KENNEY_RPG,
+    "A single foley knife-slice: the fastest cut in the set, all transient attack and no tail — minimum viable swish, the shortest path between air and edge."),
+  kenney("whooshes", "knife-slice-2", "Knife slice, variant", 569, KENNEY_RPG,
+    "The paired slice from the same session, slightly shorter and tighter in the mid-highs — hear how small spectral differences separate 'light' from 'sharper' at the same speed."),
+  kenney("whooshes", "cloth-whip", "Cloth whip", 661, KENNEY_RPG,
+    "Recorded cloth snapped at speed — broadband noise with a crack point; no metal, no air column, just surface-drag becoming a whip gesture."),
+  kenney("whooshes", "draw-knife", "Draw knife", 400, KENNEY_RPG,
+    "Knife drawn from leather — the scrape-then-swipe traces the object's path before it's free; direction encoded in the friction envelope."),
+  kenney("whooshes", "scratch-swipe", "UI swipe", 139, KENNEY_INTERFACE,
+    "A scratch foley at UI scale — at 139ms it reads as a finger-flick or card-toss; the shortest pass-by in the set, proving motion needs no minimum duration."),
+  {
+    id: "whooshes.air-whoosh",
+    name: "Air whoosh",
+    setId: "whooshes",
+    file: "curated/whooshes/air-whoosh.wav",
+    durMs: 5247,
+    source: "https://opengameart.org/content/air-whoosh",
+    author: "pyranostudios",
+    license: "CC0-1.0",
+    attributionRequired: false,
+    note: "A sustained air-column whoosh at near-loop length — the heavy-pass archetype; the broad spectral envelope and long fade tail are what read as something large moving close.",
+  },
+  {
+    id: "whooshes.wind-whoosh-loop",
+    name: "Wind whoosh, loop",
+    setId: "whooshes",
+    file: "curated/whooshes/wind-whoosh-loop.wav",
+    durMs: 5959,
+    source: "https://opengameart.org/content/wind-whoosh-loop",
+    author: "SketchMan3",
+    license: "CC0-1.0",
+    attributionRequired: false,
+    note: "EQ'd dungeon-ambience section looped into a continuous wind whoosh — the high-frequency emphasis is the one-knob trick that turns room air into passing wind.",
+  },
+  {
+    id: "whooshes.erase-sweep",
+    name: "Transition sweep",
+    setId: "whooshes",
+    file: "curated/whooshes/erase-sweep.wav",
+    durMs: 1198,
+    source: "https://opengameart.org/content/erase-escape",
+    author: "Fupi",
+    license: "CC0-1.0",
+    attributionRequired: false,
+    note: "Designed as an erase or escape cue, it reads here as a riser-sweep — the upward pitch-and-volume arc is the minimal gesture that says 'transition' across any context.",
+  },
+  {
+    id: "whooshes.swish-short",
+    name: "Swish, short",
+    setId: "whooshes",
+    file: "curated/whooshes/swish-short.wav",
+    durMs: 197,
+    source: "https://opengameart.org/content/swishes-sound-pack",
+    author: "artisticdude",
+    license: "CC0-1.0",
+    attributionRequired: false,
+    note: "The longest of the 13-swish CC0 pack — 197ms of narrow-band noise burst; compare against knife-slice to hear designed swish versus foley swish side by side.",
+  },
+  {
+    id: "whooshes.weird-whoosh",
+    name: "Whoosh, pass-by",
+    setId: "whooshes",
+    file: "curated/whooshes/weird-whoosh.wav",
+    durMs: 6000,
+    source: "https://opengameart.org/content/wierd-whooshes",
+    author: "bosslevelaudio",
+    license: "CC0-1.0",
+    attributionRequired: false,
+    note: "First six seconds of a CC0 multi-whoosh collection — catches a low, doppler-shaped pass-by with a trailing tail that the higher-frequency swishes in this set cannot supply.",
   },
 ];
