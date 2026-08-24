@@ -26,6 +26,10 @@ body {
   font-family: var(--sans);
   font-size: 15px;
   line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ---------- faceplate ---------- */
@@ -97,7 +101,9 @@ body {
 
 /* ---------- layout ---------- */
 
-.view { display: flex; min-height: calc(100vh - 76px); }
+.faceplate { flex-shrink: 0; }
+
+.view { display: flex; flex: 1; min-height: 0; }
 .view.is-hidden { display: none; }
 
 .rack {
@@ -119,18 +125,40 @@ body {
 
 #preset-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
 
+.rack-group { margin-top: 0.35rem; }
+.rack-group:first-child { margin-top: 0; }
+
 .rack-family {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   font-family: var(--mono);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--ink);
+  background: none;
+  border: none;
   border-bottom: 1px solid var(--grid);
-  padding-bottom: 0.25rem;
-  margin: 0.6rem 0.2rem 0;
+  padding: 0.35rem 0.2rem;
+  cursor: pointer;
+  text-align: left;
 }
 
-.rack-family:first-child { margin-top: 0; }
+.rack-family .chev { display: inline-block; transition: transform 120ms; }
+.rack-group.is-collapsed .chev { transform: rotate(-90deg); }
+.rack-family .fam-count { margin-left: auto; color: var(--ink-soft); }
+
+.family-presets {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rack-group.is-collapsed .family-presets { display: none; }
 
 .preset-card {
   width: 100%;
@@ -167,7 +195,17 @@ body {
 
 /* ---------- detail panel ---------- */
 
-.panel { flex: 1; padding: 1.3rem 1.6rem; max-width: 860px; }
+.panel { flex: 1; padding: 0 1.6rem 1.3rem; max-width: 860px; overflow-y: auto; }
+
+/* Head + scope + transport stay pinned while education/params scroll under. */
+.panel-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--paper);
+  padding-top: 1.3rem;
+  border-bottom: 1px solid var(--grid);
+}
 .empty { color: var(--ink-soft); font-family: var(--mono); }
 
 .detail-head { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.8rem; }
@@ -207,7 +245,8 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.8rem;
-  margin: 0.9rem 0 1.4rem;
+  margin: 0.9rem 0;
+  padding-bottom: 0.9rem;
   font-family: var(--mono);
   font-size: 0.8rem;
 }
@@ -301,6 +340,7 @@ table.params th { color: var(--ink-soft); font-weight: 500; }
   flex: 1;
   padding: 1.5rem 2rem 3rem;
   max-width: 74ch;
+  overflow-y: auto;
 }
 
 .devlog h1 { font-family: var(--mono); letter-spacing: 0.2em; font-size: 1.1rem; text-transform: uppercase; }
@@ -346,7 +386,12 @@ table.params th { color: var(--ink-soft); font-weight: 500; }
 
 @media (max-width: 760px) {
   .view { flex-direction: column; }
-  .rack { width: 100%; border-right: none; border-bottom: 1px solid var(--grid); }
+  .rack {
+    width: 100%;
+    max-height: 42vh;
+    border-right: none;
+    border-bottom: 1px solid var(--grid);
+  }
   .faceplate { flex-direction: column; align-items: flex-start; }
 }
 

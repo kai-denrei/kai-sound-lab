@@ -67,13 +67,27 @@ function buildRack(onSelect: (r: SfxRecipe) => void): void {
   const list = $("#preset-list");
   $(".rack-label").textContent =
     `${families.length} families · ${allPresets.length} presets`;
-  for (const family of families) {
-    const heading = document.createElement("li");
-    heading.className = "rack-family";
-    heading.textContent = family.name;
-    list.append(heading);
-    for (const recipe of family.presets) buildCard(list, recipe, onSelect);
-  }
+  families.forEach((family, idx) => {
+    const group = document.createElement("li");
+    group.className = "rack-group" + (idx === 0 ? "" : " is-collapsed");
+
+    const head = document.createElement("button");
+    head.className = "rack-family";
+    head.setAttribute("aria-expanded", String(idx === 0));
+    head.innerHTML = `<span class="chev" aria-hidden="true">▾</span>
+      ${family.name} <span class="fam-count">${family.presets.length}</span>`;
+    head.addEventListener("click", () => {
+      const collapsed = group.classList.toggle("is-collapsed");
+      head.setAttribute("aria-expanded", String(!collapsed));
+    });
+
+    const sub = document.createElement("ul");
+    sub.className = "family-presets";
+    for (const recipe of family.presets) buildCard(sub, recipe, onSelect);
+
+    group.append(head, sub);
+    list.append(group);
+  });
 }
 
 function buildCard(
@@ -172,20 +186,22 @@ function claimBlocks(recipe: SfxRecipe): string {
 function showDetail(recipe: SfxRecipe): void {
   const panel = $("#detail-panel");
   panel.innerHTML = `
-    <div class="detail-head">
-      <h2>${recipe.name}</h2>
-      <span class="d-id">${recipe.id} · v${recipe.version} · seed ${recipe.seed}</span>
-    </div>
-    <div class="scope-wrap" id="scope-wrap">
-      <canvas class="scope" id="scope"></canvas>
-      <div class="playhead" id="playhead" aria-hidden="true"></div>
-    </div>
-    <div class="controls">
-      <button id="btn-play">Play</button>
-      <button id="btn-family" class="secondary" title="Five plays with bounded variation">Play ×5 varied</button>
-      <label>seed <input type="number" id="in-seed" value="${recipe.seed}"></label>
-      <label>variation <input type="range" id="in-var" min="0" max="1" step="0.05" value="0"> <span id="var-out">0.00</span></label>
-      <button id="btn-export" class="secondary">Export WAV</button>
+    <div class="panel-sticky">
+      <div class="detail-head">
+        <h2>${recipe.name}</h2>
+        <span class="d-id">${recipe.id} · v${recipe.version} · seed ${recipe.seed}</span>
+      </div>
+      <div class="scope-wrap" id="scope-wrap">
+        <canvas class="scope" id="scope"></canvas>
+        <div class="playhead" id="playhead" aria-hidden="true"></div>
+      </div>
+      <div class="controls">
+        <button id="btn-play">Play</button>
+        <button id="btn-family" class="secondary" title="Five plays with bounded variation">Play ×5 varied</button>
+        <label>seed <input type="number" id="in-seed" value="${recipe.seed}"></label>
+        <label>variation <input type="range" id="in-var" min="0" max="1" step="0.05" value="0"> <span id="var-out">0.00</span></label>
+        <button id="btn-export" class="secondary">Export WAV</button>
+      </div>
     </div>
     <p class="edu-summary">${recipe.education.summary}</p>
     <div class="section-label">Why it works</div>
@@ -259,6 +275,15 @@ function showDetail(recipe: SfxRecipe): void {
 
 /* ---------- boot ---------- */
 
+/** Selecting a card auditions it immediately — Play is at distance zero. */
+function selectAndAudition(recipe: SfxRecipe): void {
+  showDetail(recipe);
+  const ctx = ensureCtx();
+  buildGraph(ctx, recipe);
+  markPlaying($("#scope-wrap"), recipe.master.durMs);
+  sweepPlayhead($("#scope-wrap"), $("#playhead"), recipe.master.durMs);
+}
+
 $("#devlog-body").innerHTML = renderMarkdown(devlogRaw);
 initTabs();
-buildRack(showDetail);
+buildRack(selectAndAudition);
