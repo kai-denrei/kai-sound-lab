@@ -254,7 +254,7 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
     <p class="edu-summary">${s.note}</p>
     <div class="section-label">Set</div>
     <p class="set-line">${set.name} — ${set.blurb}
-      <em>Mirrors the <strong>${set.mirrorsFamily}</strong> synth family.</em></p>`;
+      ${set.mirrorsFamily ? `<em>Mirrors the <strong>${set.mirrorsFamily}</strong> synth family.</em>` : ""}</p>`;
 
   void decodeSound(ensureCtx(), s).then((buf) =>
     drawWaveform($("#lib-scope") as unknown as HTMLCanvasElement, buf),

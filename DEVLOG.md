@@ -8,6 +8,39 @@ public trail.
 
 ---
 
+## 2026-08-24 — Library doubles: four themed sets, curated in parallel
+
+[decision] **The Library went from 4 sets to 8, 36 sounds to 82.** Four new
+themed sets — Warfare & Battle, Electricity & Energy, Whooshes & Movement,
+Alien & Otherworldly — plus top-ups that bring Weapons to 12 and Engines to
+10. All CC0 or CC BY 3.0/4.0, every file attributed, every license vetted on
+its own asset page.
+
+[decision] **Warfare is not Weapons.** The line we drew: Weapons is the hand
+(handheld one-shots — pistol, reload, shotgun, laser), Warfare is the
+horizon (cannon fire, shell bursts, war drums, air-raid alarm, the storm
+after). Two sets, one battlefield, no overlap — a taxonomy that tells the
+user where to look.
+
+[decision] **`mirrorsFamily` became optional.** These sets mirror no synth
+family (curation-only this round), so the type dropped the requirement and
+the detail pane renders the "Mirrors the … synth family" line only when a
+pairing exists. One-line schema change, no migration.
+
+[insight] **Curation parallelizes cleanly; the manifest is the bottleneck.**
+Five workers, one per set, each sourcing and vetting independently — but all
+writing the same `manifest.ts` and racing the same validation suite, so they
+ran sequentially, not concurrently. The real work is download-and-vet bound,
+not compute bound, so sequential cost little and the green-commit-per-set
+gate caught nothing broken because each worker validated before landing.
+
+[insight] **The license floor does real filtering.** Workers rejected a
+steady stream of near-misses on their own: CC-BY-SA explosion packs, BY-4.0
+sword swings that were actually fine but flagged for review, .7z-only assets
+that break the direct-download pipeline. The floor plus "direct file URL
+only" turned out to be a strong, cheap quality filter — the junk never
+entered the repo.
+
 ## 2026-08-24 — Engines: the first sustained textures, and the first mirrors
 
 [decision] **The LFO is the engine primitive.** One optional per-layer
