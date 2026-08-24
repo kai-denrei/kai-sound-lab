@@ -8,5 +8,6 @@ export * from "./recipe";
 export * from "./noise";
 export * from "./render";
 export * from "./wav";
+export * from "./zip";
 
 export const GENERATOR_VERSION = "0.1.0";

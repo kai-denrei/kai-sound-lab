@@ -8,6 +8,39 @@ public trail.
 
 ---
 
+## 2026-08-24 — The Library: curated recordings enter the building
+
+[decision] **Third tab: Library.** Thirty curated open-source sounds
+(Kenney, CC0) in three sets that mirror the synth families — Interface &
+UI, Impacts & Materials, Weapons & Sci-Fi. The identity boundary holds:
+recipes stay canonical in the Lab; the Library is explicitly *other
+people's recordings*, attributed even though CC0 doesn't require it,
+because provenance is part of the education.
+
+[decision] **Manifest as source of truth.** Every file under
+`public/curated/` must have a typed manifest entry; a test suite enforces
+the bijection, the license floor (CC0/CC BY only), attribution-flag
+consistency, and that each entry's stated duration matches the actual
+RIFF header within 5ms. Curation errors are now build failures.
+
+[decision] **Set downloads are zipped client-side** with a ~100-line
+STORE-method ZIP writer — WAV barely compresses, so DEFLATE would buy
+bytes we don't need at the cost of a dependency. Each zip carries a
+generated CREDITS.txt whose per-sound lines are ready to paste into a
+game's own credits.
+
+[insight] **The parallel rack earns its keep.** Because curated files are
+decoded to AudioBuffers, every existing affordance — waveform thumbnails,
+the scope, the playhead sweep — worked on recordings without modification.
+The comparison the tab exists for (synthesized vs. recorded, side by
+side, same instruments) fell out of the architecture for free.
+
+[insight] **Recorded references sharpen the synth ear.** Kenney's 40ms
+`select` tick is a lesson in restraint no spec would teach: the designed
+click is *softer* than our synth clicks, the designed punch has a low-end
+sweetener no real fist produces. Fiction beats physics, and now the
+evidence is one tab away.
+
 ## 2026-08-24 — Melee & Materials: the damping continuum
 
 [decision] **Fifth family: Melee & Materials** — sword clash, mace vs wood /
