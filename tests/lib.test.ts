@@ -108,6 +108,7 @@ describe("recipe validation and preset integrity", () => {
       ["weapons", 5],
       ["melee", 5],
       ["fx", 4],
+      ["engines", 6],
     ]);
   });
 
