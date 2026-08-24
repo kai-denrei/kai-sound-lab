@@ -251,7 +251,8 @@ body {
   font-size: 0.8rem;
 }
 
-.controls button {
+.controls button,
+.mirror-row button {
   font-family: var(--mono);
   font-size: 0.8rem;
   letter-spacing: 0.06em;
@@ -263,7 +264,8 @@ body {
   cursor: pointer;
 }
 
-.controls button.secondary {
+.controls button.secondary,
+.mirror-row button.secondary {
   background: #fff;
   color: var(--phosphor);
 }
@@ -445,3 +447,13 @@ table.params th { color: var(--ink-soft); font-weight: 500; }
   align-items: center;
   text-decoration: none;
 }
+
+.mirror-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.7rem 0 0.2rem;
+}
+.mirror-row .section-label { margin: 0; }
+.mirror-row a { font-size: 0.85rem; }
+.mirror-row button { font-size: 0.75rem; padding: 3px 10px; }

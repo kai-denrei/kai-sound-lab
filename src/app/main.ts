@@ -5,8 +5,11 @@ import type { SfxRecipe } from "../lib/recipe";
 import { audioBufferToWav, buildGraph, renderOffline } from "../lib";
 import { drawWaveform } from "./draw";
 import { renderMarkdown } from "./markdown";
-import { initLibrary } from "./library";
+import { auditionCurated, initLibrary } from "./library";
 import { markPlaying, sweepPlayhead } from "./scope";
+import { jumpTo, registerJump, registerTabSwitcher } from "./crosslink";
+import { mirrorForPreset } from "../curated/mirrors";
+import { curatedSounds } from "../curated/manifest";
 
 /** The lab app is a consumer of src/lib — it holds no synthesis logic. */
 
@@ -158,6 +161,8 @@ function claimBlocks(recipe: SfxRecipe): string {
 }
 
 function showDetail(recipe: SfxRecipe): void {
+  const mirror = mirrorForPreset(recipe.id);
+  const curated = mirror ? curatedSounds.find((s) => s.id === mirror.curatedId) : undefined;
   const panel = $("#detail-panel");
   panel.innerHTML = `
     <div class="panel-sticky">
@@ -176,6 +181,11 @@ function showDetail(recipe: SfxRecipe): void {
         <label>variation <input type="range" id="in-var" min="0" max="1" step="0.05" value="0"> <span id="var-out">0.00</span></label>
         <button id="btn-export" class="secondary">Export WAV</button>
       </div>
+      ${curated ? `<div class="mirror-row">
+        <span class="section-label">recorded mirror</span>
+        <a href="#" id="mirror-link">${curated.name} — ${curated.author}</a>
+        <button id="btn-ab" class="secondary" title="Synth, then the recording it mirrors">A/B</button>
+      </div>` : ""}
     </div>
     <p class="edu-summary">${recipe.education.summary}</p>
     <div class="section-label">Why it works</div>
@@ -245,6 +255,39 @@ function showDetail(recipe: SfxRecipe): void {
     a.click();
     URL.revokeObjectURL(a.href);
   });
+
+  if (curated) {
+    $("#mirror-link").addEventListener("click", (e) => {
+      e.preventDefault();
+      jumpTo("library", curated.id);
+    });
+
+    const abBtn = $<HTMLButtonElement>("#btn-ab");
+    abBtn.addEventListener("click", () => {
+      abBtn.disabled = true;
+      // synth, a beat of silence, then the recording it mirrors
+      const totalMs = recipe.master.durMs + 250 + curated.durMs;
+      const reenable = window.setTimeout(() => {
+        abBtn.disabled = false;
+      }, totalMs);
+      const fail = () => {
+        window.clearTimeout(reenable);
+        abBtn.textContent = "Failed — retry";
+        abBtn.disabled = false;
+      };
+      try {
+        const ctx = ensureCtx();
+        buildGraph(ctx, recipe, { seed: currentSeed(), variationAmount: currentVar() });
+        markPlaying(scopeWrap, recipe.master.durMs);
+        sweepPlayhead(scopeWrap, playhead, recipe.master.durMs);
+        window.setTimeout(() => {
+          auditionCurated(curated.id).catch(fail);
+        }, recipe.master.durMs + 250);
+      } catch {
+        fail();
+      }
+    });
+  }
 }
 
 /* ---------- boot ---------- */
@@ -260,5 +303,17 @@ function selectAndAudition(recipe: SfxRecipe): void {
 
 $("#devlog-body").innerHTML = renderMarkdown(devlogRaw);
 initTabs();
+registerTabSwitcher((tab) => showTab(tab === "lab" ? "lab" : "library"));
 buildRack(selectAndAudition);
+registerJump("lab", (id) => {
+  const card = document.querySelector<HTMLButtonElement>(
+    `#preset-list .preset-card[data-id="${id}"]`,
+  );
+  if (!card) return;
+  const group = card.closest(".rack-group");
+  if (group?.classList.contains("is-collapsed"))
+    group.querySelector<HTMLButtonElement>(".rack-family")?.click();
+  card.click();
+  card.scrollIntoView({ block: "nearest" });
+});
 initLibrary(ensureCtx);
