@@ -6,6 +6,7 @@ import { buildZip, renderOffline } from "../lib";
 import { drawWaveform } from "./draw";
 import { markPlaying, sweepPlayhead } from "./scope";
 import { jumpTo, registerJump } from "./crosslink";
+import { addVoice, stopAll } from "./transport";
 
 /** The library tab: curated open-source sets, attributed, downloadable. */
 
@@ -61,7 +62,8 @@ export async function auditionCurated(id: string): Promise<void> {
   if (!s) throw new Error(`unknown curated sound: ${id}`);
   const ctx = ctxProvider();
   const buf = await decodeSound(ctx, s);
-  playBuffer(ctx, buf);
+  const voice = playBuffer(ctx, buf);
+  addVoice(voice, s.durMs);
 }
 
 export function initLibrary(ensureCtx: () => AudioContext): void {
@@ -204,17 +206,35 @@ function addDownloadRow(list: HTMLElement, setId: string): void {
   list.append(li);
 }
 
-function playBuffer(ctx: AudioContext, buf: AudioBuffer): void {
+function playBuffer(ctx: AudioContext, buf: AudioBuffer): import("../lib").Voice {
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.connect(ctx.destination);
+  const gain = ctx.createGain();
+  src.connect(gain);
+  gain.connect(ctx.destination);
   src.start();
+  let stopped = false;
+  return {
+    stop(fadeMs = 20) {
+      if (stopped) return;
+      stopped = true;
+      const now = ctx.currentTime;
+      const end = now + fadeMs / 1000;
+      try {
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(gain.gain.value, now);
+        gain.gain.linearRampToValueAtTime(0, end);
+      } catch { /* torn down */ }
+      try { src.stop(end); } catch { /* already stopped */ }
+    },
+  };
 }
 
 function selectAndAudition(s: CuratedSound, ensureCtx: () => AudioContext): void {
   showDetail(s, ensureCtx);
   void decodeSound(ensureCtx(), s).then((buf) => {
-    playBuffer(ensureCtx(), buf);
+    const voice = playBuffer(ensureCtx(), buf);
+    addVoice(voice, s.durMs);
     markPlaying($("#lib-scope-wrap"), s.durMs);
     sweepPlayhead($("#lib-scope-wrap"), $("#lib-playhead"), s.durMs);
   });
@@ -237,6 +257,7 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
       </div>
       <div class="controls">
         <button id="lib-play">Play</button>
+        <button id="lib-btn-stop" class="secondary">Stop</button>
         <a class="secondary btn-link" href="${assetUrl(s.file)}" download>Download WAV</a>
       </div>
       ${preset ? `<div class="mirror-row">
@@ -260,12 +281,21 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
     drawWaveform($("#lib-scope") as unknown as HTMLCanvasElement, buf),
   );
 
+  let abTimer: number | undefined;
+
   $("#lib-play").addEventListener("click", () => {
     void decodeSound(ensureCtx(), s).then((buf) => {
-      playBuffer(ensureCtx(), buf);
+      const voice = playBuffer(ensureCtx(), buf);
+      addVoice(voice, s.durMs);
       markPlaying($("#lib-scope-wrap"), s.durMs);
       sweepPlayhead($("#lib-scope-wrap"), $("#lib-playhead"), s.durMs);
     });
+  });
+
+  $("#lib-btn-stop").addEventListener("click", () => {
+    if (abTimer !== undefined) { clearTimeout(abTimer); abTimer = undefined; }
+    stopAll();
+    $("#lib-scope-wrap").classList.remove("is-playing");
   });
 
   if (preset) {
@@ -290,12 +320,17 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
       try {
         const ctx = ensureCtx();
         const buf = await decodeSound(ctx, s);
-        playBuffer(ctx, buf);
+        const recordingVoice = playBuffer(ctx, buf);
+        addVoice(recordingVoice, s.durMs);
         markPlaying($("#lib-scope-wrap"), s.durMs);
         sweepPlayhead($("#lib-scope-wrap"), $("#lib-playhead"), s.durMs);
-        window.setTimeout(() => {
+        abTimer = window.setTimeout(() => {
+          abTimer = undefined;
           renderOffline(preset)
-            .then((synthBuf) => playBuffer(ensureCtx(), synthBuf))
+            .then((synthBuf) => {
+              const synthVoice = playBuffer(ensureCtx(), synthBuf);
+              addVoice(synthVoice, preset.master.durMs);
+            })
             .catch(fail);
         }, s.durMs + 250);
       } catch {
