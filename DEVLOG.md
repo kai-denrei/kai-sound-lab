@@ -8,6 +8,37 @@ public trail.
 
 ---
 
+## 2026-08-24 — Whooshes, and a STOP button that meant rethinking playback
+
+[decision] **Whooshes family: four archetype mirrors.** Swish, air, wind,
+sweep — one synth preset each, mirroring a curated whoosh recording. Motion
+turns out to be almost entirely a filtered-noise sweep: a bandpass climbing
+is the object cutting through air, the amplitude arc is its pass. No new
+primitive — the wind gust is a filter LFO, the swishes are one-directional
+filter envelopes. Everything the Engines work added carried straight over.
+
+[decision] **STOP forced playback to grow a handle.** Until now `buildGraph`
+and the library's `playBuffer` were fire-and-forget — they returned nothing,
+so a 4-second wind bed or a running A/B could not be stopped. `buildGraph`
+now returns a `Voice { stop(fadeMs) }` that ramps its master gain to zero
+over 20ms (click-free) and stops its nodes, guarded so a double-stop is a
+no-op. A tiny app-layer `transport` registry tracks live voices; STOP is
+`stopAll()`. Both tabs share one AudioContext, so one registry silences
+everything.
+
+[insight] **The click ramp is the whole trick.** Calling `.stop()` on a
+source mid-sample clicks — a hard discontinuity. Ramping the gain to zero
+over 20ms first, then stopping the (now silent) source, is the difference
+between a stop and a pop. Cheap, and it's why the Voice owns a gain node
+rather than just a source reference.
+
+[insight] **STOP mid-A/B exposed a hidden scheduler.** The A/B button plays
+recording, waits, plays synth — that wait is a `setTimeout`. `stopAll()`
+kills sounding voices but can't un-schedule a future one, so pressing STOP
+during the gap would have fired the second sound into the silence. The fix
+was to capture that timer id and clear it in the STOP handler. A reminder
+that "stop everything" includes the things not playing *yet*.
+
 ## 2026-08-24 — Library doubles: four themed sets, curated in parallel
 
 [decision] **The Library went from 4 sets to 8, 36 sounds to 82.** Four new
