@@ -26,6 +26,8 @@ export interface NoiseSource {
 
 export interface AmpEnv {
   attackMs: number;
+  /** Hold at peak between attack and decay. */
+  holdMs?: number;
   decayMs: number;
   /** Peak linear gain of this layer, 0..1. */
   peak: number;
@@ -36,6 +38,20 @@ export interface PitchEnv {
   toHz: number;
   timeMs: number;
   curve: Curve;
+}
+
+export type LfoTarget = "gain" | "freq" | "filter";
+
+/**
+ * Periodic modulation — the primitive that makes sustained textures move.
+ * Depth semantics per target: gain = index 0..1 (swings base·(1−depth)..base),
+ * freq = ±cents of detune, filter = ±Hz around the filter frequency.
+ */
+export interface LfoSpec {
+  target: LfoTarget;
+  rateHz: number;
+  depth: number;
+  shape: OscType;
 }
 
 export interface FilterSpec {
@@ -57,6 +73,7 @@ export interface Layer {
   /** Oscillator layers only; ignored for noise. */
   pitchEnv?: PitchEnv;
   filter?: FilterSpec;
+  lfo?: LfoSpec;
   /**
    * tanh saturation, 0..2. Increases spectral density — gunshot crack,
    * explosion body, heavy lasers. Applied after the filter, before the
@@ -162,6 +179,22 @@ export function validateRecipe(r: SfxRecipe): void {
       fail(`layer "${layer.id}" drive out of 0..2`);
     if (layer.filter?.env && layer.filter.env.toHz <= 0)
       fail(`layer "${layer.id}" filter env target must be positive`);
+    if (layer.ampEnv.holdMs !== undefined && layer.ampEnv.holdMs < 0)
+      fail(`layer "${layer.id}" holdMs must be >= 0`);
+    if (layer.lfo) {
+      const { target, rateHz, depth } = layer.lfo;
+      if (rateHz < 0.05 || rateHz > 50)
+        fail(`layer "${layer.id}" lfo rateHz out of 0.05..50`);
+      if (depth < 0) fail(`layer "${layer.id}" lfo depth must be >= 0`);
+      if (target === "gain" && depth > 1)
+        fail(`layer "${layer.id}" gain lfo depth out of 0..1`);
+      if (target === "freq" && layer.source.kind !== "osc")
+        fail(`layer "${layer.id}" freq LFO requires an osc source`);
+      if (target === "filter" && !layer.filter)
+        fail(`layer "${layer.id}" filter LFO requires a filter`);
+      if (target === "filter" && layer.filter && depth >= layer.filter.freqHz)
+        fail(`layer "${layer.id}" filter lfo depth must be < filter freqHz`);
+    }
   }
   const p = r.perception;
   for (const [k, v] of Object.entries(p))

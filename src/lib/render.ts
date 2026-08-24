@@ -96,17 +96,21 @@ function buildLayer(
   const gain = new GainNode(ctx, { gain: 0 });
   gain.gain.setValueAtTime(0, t0);
   gain.gain.linearRampToValueAtTime(peakGain, t0 + attackS);
-  const endT = t0 + attackS + decayMs / 1000;
+  const holdS = (layer.ampEnv.holdMs ?? 0) / 1000;
+  const decayStart = t0 + attackS + holdS;
+  const endT = decayStart + decayMs / 1000;
   if (curve === "exp") {
-    gain.gain.setValueAtTime(peakGain, t0 + attackS);
+    gain.gain.setValueAtTime(peakGain, decayStart);
     gain.gain.exponentialRampToValueAtTime(0.0001, endT);
   } else {
+    gain.gain.setValueAtTime(peakGain, decayStart);
     gain.gain.linearRampToValueAtTime(0, endT);
   }
 
   let head: AudioNode = source;
+  let filterNode: BiquadFilterNode | undefined;
   if (layer.filter) {
-    const f = new BiquadFilterNode(ctx, {
+    filterNode = new BiquadFilterNode(ctx, {
       type: layer.filter.type,
       frequency: layer.filter.freqHz,
       Q: layer.filter.q ?? 1,
@@ -114,15 +118,15 @@ function buildLayer(
     });
     if (layer.filter.env) {
       const { toHz, timeMs, curve: fCurve } = layer.filter.env;
-      f.frequency.setValueAtTime(layer.filter.freqHz, t0);
+      filterNode.frequency.setValueAtTime(layer.filter.freqHz, t0);
       if (fCurve === "exp") {
-        f.frequency.exponentialRampToValueAtTime(Math.max(10, toHz), t0 + timeMs / 1000);
+        filterNode.frequency.exponentialRampToValueAtTime(Math.max(10, toHz), t0 + timeMs / 1000);
       } else {
-        f.frequency.linearRampToValueAtTime(Math.max(10, toHz), t0 + timeMs / 1000);
+        filterNode.frequency.linearRampToValueAtTime(Math.max(10, toHz), t0 + timeMs / 1000);
       }
     }
-    head.connect(f);
-    head = f;
+    head.connect(filterNode);
+    head = filterNode;
   }
   if (layer.drive) {
     const shaper = new WaveShaperNode(ctx, {
@@ -134,6 +138,32 @@ function buildLayer(
   }
   head.connect(gain);
   gain.connect(out);
+
+  if (layer.lfo) {
+    const { target, rateHz, depth, shape } = layer.lfo;
+    const lfoOsc = new OscillatorNode(ctx, { type: shape, frequency: rateHz });
+    const scale = new GainNode(ctx, { gain: 0 });
+    lfoOsc.connect(scale);
+    if (target === "gain") {
+      // env drives gain.gain to peakGain; recenter so output swings
+      // peakGain·(1−depth) .. peakGain: subtract depth/2, modulate ±depth/2.
+      const mod = new GainNode(ctx, { gain: 1 - depth / 2 });
+      // reroute: head → mod → gain instead of head → gain
+      head.disconnect(gain);
+      head.connect(mod);
+      mod.connect(gain);
+      scale.gain.value = depth / 2;
+      scale.connect(mod.gain);
+    } else if (target === "freq" && source instanceof OscillatorNode) {
+      scale.gain.value = depth; // cents
+      scale.connect(source.detune);
+    } else if (target === "filter" && filterNode) {
+      scale.gain.value = depth; // Hz
+      scale.connect(filterNode.frequency);
+    }
+    lfoOsc.start(t0);
+    lfoOsc.stop(t0 + durS + 0.05);
+  }
 
   source.start(t0);
   source.stop(t0 + durS + 0.05);

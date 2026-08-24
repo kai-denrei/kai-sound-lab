@@ -1,8 +1,11 @@
 import { curatedSets, curatedSounds, type CuratedSound } from "../curated/manifest";
 import { renderCredits } from "../curated/credits";
-import { buildZip } from "../lib";
+import { mirrorForCurated } from "../curated/mirrors";
+import { allPresets } from "../presets";
+import { buildZip, renderOffline } from "../lib";
 import { drawWaveform } from "./draw";
 import { markPlaying, sweepPlayhead } from "./scope";
+import { jumpTo, registerJump } from "./crosslink";
 
 /** The library tab: curated open-source sets, attributed, downloadable. */
 
@@ -48,7 +51,48 @@ const LICENSE_LABEL: Record<string, string> = {
   "CC-BY-3.0": "CC BY 3.0",
 };
 
+/** Set by initLibrary so auditionCurated can play outside the library tab. */
+let ctxProvider: (() => AudioContext) | null = null;
+
+/** Fetch, decode, and play a curated sound by id (audio only, no UI). */
+export async function auditionCurated(id: string): Promise<void> {
+  if (!ctxProvider) throw new Error("auditionCurated called before initLibrary");
+  const s = curatedSounds.find((x) => x.id === id);
+  if (!s) throw new Error(`unknown curated sound: ${id}`);
+  const ctx = ctxProvider();
+  const buf = await decodeSound(ctx, s);
+  playBuffer(ctx, buf);
+}
+
 export function initLibrary(ensureCtx: () => AudioContext): void {
+  ctxProvider = ensureCtx;
+  registerJump("library", (id) => {
+    const findCard = () =>
+      document.querySelector<HTMLButtonElement>(
+        `#library-list .preset-card[data-id="${id}"]`,
+      );
+    let card = findCard();
+    if (!card) {
+      // Card not built yet — its set is collapsed and unhydrated. Clicking
+      // the family header hydrates synchronously, then the card exists.
+      const s = curatedSounds.find((x) => x.id === id);
+      if (!s) return;
+      const setIdx = curatedSets.findIndex((x) => x.id === s.setId);
+      const group = document.querySelectorAll<HTMLElement>(
+        "#library-list .rack-group",
+      )[setIdx];
+      if (group?.classList.contains("is-collapsed"))
+        group.querySelector<HTMLButtonElement>(".rack-family")?.click();
+      card = findCard();
+    }
+    if (!card) return;
+    const group = card.closest(".rack-group");
+    if (group?.classList.contains("is-collapsed"))
+      group.querySelector<HTMLButtonElement>(".rack-family")?.click();
+    card.click();
+    card.scrollIntoView({ block: "nearest" });
+  });
+
   const list = $("#library-list");
   $("#library-label").textContent =
     `${curatedSets.length} curated sets · ${curatedSounds.length} sounds`;
@@ -178,6 +222,8 @@ function selectAndAudition(s: CuratedSound, ensureCtx: () => AudioContext): void
 
 function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
   const set = curatedSets.find((x) => x.id === s.setId)!;
+  const mirror = mirrorForCurated(s.id);
+  const preset = mirror ? allPresets.find((p) => p.id === mirror.presetId) : undefined;
   const panel = $("#library-panel");
   panel.innerHTML = `
     <div class="panel-sticky">
@@ -193,6 +239,11 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
         <button id="lib-play">Play</button>
         <a class="secondary btn-link" href="${assetUrl(s.file)}" download>Download WAV</a>
       </div>
+      ${preset ? `<div class="mirror-row">
+        <span class="section-label">synth mirror</span>
+        <a href="#" id="lib-mirror-link">${preset.name}</a>
+        <button id="lib-btn-ab" class="secondary" title="The recording, then the synth that mirrors it">A/B</button>
+      </div>` : ""}
     </div>
     <div class="attribution">
       <span class="license-badge">${LICENSE_LABEL[s.license]}</span>
@@ -216,4 +267,40 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
       sweepPlayhead($("#lib-scope-wrap"), $("#lib-playhead"), s.durMs);
     });
   });
+
+  if (preset) {
+    $("#lib-mirror-link").addEventListener("click", (e) => {
+      e.preventDefault();
+      jumpTo("lab", preset.id);
+    });
+
+    const abBtn = $<HTMLButtonElement>("#lib-btn-ab");
+    abBtn.addEventListener("click", async () => {
+      abBtn.disabled = true;
+      // recording, a beat of silence, then the synth mirror
+      const totalMs = s.durMs + 250 + preset.master.durMs;
+      const reenable = window.setTimeout(() => {
+        abBtn.disabled = false;
+      }, totalMs);
+      const fail = () => {
+        window.clearTimeout(reenable);
+        abBtn.textContent = "Failed — retry";
+        abBtn.disabled = false;
+      };
+      try {
+        const ctx = ensureCtx();
+        const buf = await decodeSound(ctx, s);
+        playBuffer(ctx, buf);
+        markPlaying($("#lib-scope-wrap"), s.durMs);
+        sweepPlayhead($("#lib-scope-wrap"), $("#lib-playhead"), s.durMs);
+        window.setTimeout(() => {
+          renderOffline(preset)
+            .then((synthBuf) => playBuffer(ensureCtx(), synthBuf))
+            .catch(fail);
+        }, s.durMs + 250);
+      } catch {
+        fail();
+      }
+    });
+  }
 }

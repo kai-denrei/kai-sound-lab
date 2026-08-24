@@ -8,6 +8,38 @@ public trail.
 
 ---
 
+## 2026-08-24 — Engines: the first sustained textures, and the first mirrors
+
+[decision] **The LFO is the engine primitive.** One optional per-layer
+field — `lfo: { target: gain|freq|filter, rateHz, depth, shape }` — plus
+`holdMs` on the amp envelope. That's the entire schema cost of moving from
+one-shot events to sustained textures. Both renderers got it in one place
+because the graph builder was already shared.
+
+[decision] **Mirrors are a registry, not a field.** The 1:1 pairing between
+curated recordings and synth presets lives in one file (`mirrors.ts`),
+tested for existence in both directions. Neither the manifest nor the
+recipe schema knows the other exists.
+
+[decision] **Real motors entered the library** — two OpenGameArt CC-BY 3.0
+loops (Nayckron's heavy vehicle, qubodup's toy car) join Kenney's sci-fi
+drives. First attribution-required content; the A/B button now sits next
+to a license badge that actually obligates.
+
+[insight] **Rotation is amplitude modulation.** The circular engine
+recording reads as "rotating machine" because one noise band swells ~4.5
+times a second — and a sine LFO on bandpassed pink noise reproduces the
+identity instantly. But A/B against the recording exposes the gap: the
+real sweep is asymmetric (fast rise, slow fall), a sine is symmetric. The
+mirror doesn't just demonstrate the technique; it locates precisely what
+the technique still lacks.
+
+[insight] **A recording's mess is its signature.** The synth idle is
+cleaner than Kenney's engine-low, the synth motor steadier than the real
+tank loop — and both sound cheaper for it. The curated set keeps making
+the same argument from the other side: the imperfections are the fiction's
+credibility.
+
 ## 2026-08-24 — The Library: curated recordings enter the building
 
 [decision] **Third tab: Library.** Thirty curated open-source sounds
