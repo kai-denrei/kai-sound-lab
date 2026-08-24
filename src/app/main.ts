@@ -93,6 +93,37 @@ function buildRack(onSelect: (r: SfxRecipe) => void): void {
   }
 }
 
+/* ---------- playhead ---------- */
+
+const playingTimeouts = new WeakMap<HTMLElement, number>();
+
+/** Hold the "playing" glow on the scope for the whole audible span. */
+function markPlaying(wrap: HTMLElement, totalMs: number): void {
+  wrap.classList.add("is-playing");
+  const prev = playingTimeouts.get(wrap);
+  if (prev !== undefined) clearTimeout(prev);
+  playingTimeouts.set(
+    wrap,
+    window.setTimeout(() => wrap.classList.remove("is-playing"), totalMs),
+  );
+}
+
+/**
+ * Sweep the cursor across the scope in sync with one playback. The scope
+ * x-axis is time (0 → master.durMs), so a linear sweep tracks the waveform
+ * underneath it. Reduced-motion users get the border glow only.
+ */
+function sweepPlayhead(wrap: HTMLElement, head: HTMLElement, durMs: number, delayMs = 0): void {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  head.animate(
+    [
+      { transform: "translateX(0)", opacity: 1 },
+      { transform: `translateX(${wrap.clientWidth - 2}px)`, opacity: 1 },
+    ],
+    { duration: durMs, delay: delayMs, easing: "linear", fill: "none" },
+  );
+}
+
 /* ---------- detail panel ---------- */
 
 function layerRows(recipe: SfxRecipe): string {
@@ -129,7 +160,10 @@ function showDetail(recipe: SfxRecipe): void {
       <h2>${recipe.name}</h2>
       <span class="d-id">${recipe.id} · v${recipe.version} · seed ${recipe.seed}</span>
     </div>
-    <canvas class="scope" id="scope"></canvas>
+    <div class="scope-wrap" id="scope-wrap">
+      <canvas class="scope" id="scope"></canvas>
+      <div class="playhead" id="playhead" aria-hidden="true"></div>
+    </div>
     <div class="controls">
       <button id="btn-play">Play</button>
       <button id="btn-family" class="secondary" title="Five plays with bounded variation">Play ×5 varied</button>
@@ -147,6 +181,8 @@ function showDetail(recipe: SfxRecipe): void {
     </table>`;
 
   const scope = $<HTMLCanvasElement>("#scope");
+  const scopeWrap = $("#scope-wrap");
+  const playhead = $("#playhead");
   const seedInput = $<HTMLInputElement>("#in-seed");
   const varInput = $<HTMLInputElement>("#in-var");
   const varOut = $("#var-out");
@@ -172,18 +208,23 @@ function showDetail(recipe: SfxRecipe): void {
   $("#btn-play").addEventListener("click", () => {
     const ctx = ensureCtx();
     buildGraph(ctx, recipe, { seed: currentSeed(), variationAmount: currentVar() });
+    markPlaying(scopeWrap, recipe.master.durMs);
+    sweepPlayhead(scopeWrap, playhead, recipe.master.durMs);
   });
 
   $("#btn-family").addEventListener("click", () => {
     const ctx = ensureCtx();
     const amount = currentVar() || 0.6;
+    const spacingMs = recipe.master.durMs + 90;
     for (let i = 0; i < 5; i++) {
       buildGraph(ctx, recipe, {
         seed: currentSeed() + i * 7919,
         variationAmount: amount,
-        when: ctx.currentTime + i * (recipe.master.durMs / 1000 + 0.09),
+        when: ctx.currentTime + (i * spacingMs) / 1000,
       });
+      sweepPlayhead(scopeWrap, playhead, recipe.master.durMs, i * spacingMs);
     }
+    markPlaying(scopeWrap, 4 * spacingMs + recipe.master.durMs);
   });
 
   $("#btn-export").addEventListener("click", async () => {
