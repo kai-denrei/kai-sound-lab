@@ -10,6 +10,7 @@ import { markPlaying, sweepPlayhead } from "./scope";
 import { jumpTo, registerJump, registerTabSwitcher } from "./crosslink";
 import { mirrorForPreset } from "../curated/mirrors";
 import { curatedSounds } from "../curated/manifest";
+import { addVoice, stopAll } from "./transport";
 
 /** The lab app is a consumer of src/lib — it holds no synthesis logic. */
 
@@ -176,6 +177,7 @@ function showDetail(recipe: SfxRecipe): void {
       </div>
       <div class="controls">
         <button id="btn-play">Play</button>
+        <button id="btn-stop" class="secondary">Stop</button>
         <button id="btn-family" class="secondary" title="Five plays with bounded variation">Play ×5 varied</button>
         <label>seed <input type="number" id="in-seed" value="${recipe.seed}"></label>
         <label>variation <input type="range" id="in-var" min="0" max="1" step="0.05" value="0"> <span id="var-out">0.00</span></label>
@@ -202,6 +204,7 @@ function showDetail(recipe: SfxRecipe): void {
   const seedInput = $<HTMLInputElement>("#in-seed");
   const varInput = $<HTMLInputElement>("#in-var");
   const varOut = $("#var-out");
+  let abTimer: number | undefined;
 
   const currentSeed = () => Number(seedInput.value) || recipe.seed;
   const currentVar = () => Number(varInput.value);
@@ -223,7 +226,8 @@ function showDetail(recipe: SfxRecipe): void {
 
   $("#btn-play").addEventListener("click", () => {
     const ctx = ensureCtx();
-    buildGraph(ctx, recipe, { seed: currentSeed(), variationAmount: currentVar() });
+    const voice = buildGraph(ctx, recipe, { seed: currentSeed(), variationAmount: currentVar() });
+    addVoice(voice, recipe.master.durMs);
     markPlaying(scopeWrap, recipe.master.durMs);
     sweepPlayhead(scopeWrap, playhead, recipe.master.durMs);
   });
@@ -233,11 +237,12 @@ function showDetail(recipe: SfxRecipe): void {
     const amount = currentVar() || 0.6;
     const spacingMs = recipe.master.durMs + 90;
     for (let i = 0; i < 5; i++) {
-      buildGraph(ctx, recipe, {
+      const voice = buildGraph(ctx, recipe, {
         seed: currentSeed() + i * 7919,
         variationAmount: amount,
         when: ctx.currentTime + (i * spacingMs) / 1000,
       });
+      addVoice(voice, recipe.master.durMs);
       sweepPlayhead(scopeWrap, playhead, recipe.master.durMs, i * spacingMs);
     }
     markPlaying(scopeWrap, 4 * spacingMs + recipe.master.durMs);
@@ -277,10 +282,12 @@ function showDetail(recipe: SfxRecipe): void {
       };
       try {
         const ctx = ensureCtx();
-        buildGraph(ctx, recipe, { seed: currentSeed(), variationAmount: currentVar() });
+        const synthVoice = buildGraph(ctx, recipe, { seed: currentSeed(), variationAmount: currentVar() });
+        addVoice(synthVoice, recipe.master.durMs);
         markPlaying(scopeWrap, recipe.master.durMs);
         sweepPlayhead(scopeWrap, playhead, recipe.master.durMs);
-        window.setTimeout(() => {
+        abTimer = window.setTimeout(() => {
+          abTimer = undefined;
           auditionCurated(curated.id).catch(fail);
         }, recipe.master.durMs + 250);
       } catch {
@@ -288,6 +295,12 @@ function showDetail(recipe: SfxRecipe): void {
       }
     });
   }
+
+  $("#btn-stop").addEventListener("click", () => {
+    if (abTimer !== undefined) { clearTimeout(abTimer); abTimer = undefined; }
+    stopAll();
+    scopeWrap.classList.remove("is-playing");
+  });
 }
 
 /* ---------- boot ---------- */
@@ -296,7 +309,8 @@ function showDetail(recipe: SfxRecipe): void {
 function selectAndAudition(recipe: SfxRecipe): void {
   showDetail(recipe);
   const ctx = ensureCtx();
-  buildGraph(ctx, recipe);
+  const voice = buildGraph(ctx, recipe);
+  addVoice(voice, recipe.master.durMs);
   markPlaying($("#scope-wrap"), recipe.master.durMs);
   sweepPlayhead($("#scope-wrap"), $("#playhead"), recipe.master.durMs);
 }
