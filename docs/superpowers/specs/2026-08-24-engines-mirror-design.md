@@ -50,6 +50,12 @@ Validation rules (added to the existing recipe validator, with tests):
 - `depth` < 0, or > 1 for `gain` target → error.
 - `filter` depth ≥ filter freqHz → error (would sweep through 0 Hz).
 
+**Addendum (found at planning):** `AmpEnv` gains optional `holdMs?: number`
+(default 0) — attack to peak, hold at peak for `holdMs`, then decay. The
+existing envelope always decays to zero immediately after attack, which
+cannot express a steady engine bed. Backwards compatible; validator rejects
+negative values.
+
 Rendering: both paths already share the WebAudio graph builder, so the LFO
 is implemented once — an `OscillatorNode(shape, rateHz)` through a scaling
 `GainNode` into the target `AudioParam` (`gain.gain` offset-arranged for
