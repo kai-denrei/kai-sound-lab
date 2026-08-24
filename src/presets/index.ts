@@ -5,6 +5,7 @@ import { weaponPresets } from "./weapons";
 import { meleePresets } from "./melee";
 import { fxPresets } from "./fx";
 import { enginePresets } from "./engines";
+import { whooshPresets } from "./whooshes";
 
 export interface PresetFamily {
   id: string;
@@ -19,6 +20,7 @@ export const families: PresetFamily[] = [
   { id: "melee", name: "Melee & Materials", presets: meleePresets },
   { id: "fx", name: "Impacts & FX", presets: fxPresets },
   { id: "engines", name: "Engines", presets: enginePresets },
+  { id: "whooshes", name: "Whooshes", presets: whooshPresets },
 ];
 
 export const allPresets: SfxRecipe[] = families.flatMap((f) => f.presets);

@@ -16,6 +16,10 @@ export const mirrors: MirrorPair[] = [
   { curatedId: "engines.space-small", presetId: "eng.space-small" },
   { curatedId: "engines.space-large", presetId: "eng.space-large" },
   { curatedId: "engines.motor", presetId: "eng.motor" },
+  { curatedId: "whooshes.swish-short", presetId: "whoosh.swish" },
+  { curatedId: "whooshes.air-whoosh", presetId: "whoosh.air" },
+  { curatedId: "whooshes.wind-whoosh-loop", presetId: "whoosh.wind" },
+  { curatedId: "whooshes.erase-sweep", presetId: "whoosh.sweep" },
 ];
 
 export const mirrorForCurated = (id: string): MirrorPair | undefined =>
