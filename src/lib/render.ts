@@ -9,6 +9,10 @@ import { validateRecipe } from "./recipe";
  * is what you export.
  */
 
+export interface Voice {
+  stop(fadeMs?: number): void;
+}
+
 export interface PlayOptions {
   /**
    * Seed for this instance's bounded variation. Defaults to the recipe seed
@@ -62,6 +66,7 @@ function buildLayer(
   v: InstanceVariation,
   out: AudioNode,
   when: number,
+  sinks: AudioScheduledSourceNode[],
 ): void {
   const t0 = when + (layer.delayMs ?? 0) / 1000 + v.delayAddS;
   const durS = layer.durMs / 1000;
@@ -163,10 +168,12 @@ function buildLayer(
     }
     lfoOsc.start(t0);
     lfoOsc.stop(t0 + durS + 0.05);
+    sinks.push(lfoOsc);
   }
 
   source.start(t0);
   source.stop(t0 + durS + 0.05);
+  sinks.push(source);
 }
 
 /** Build the full recipe graph into any context. */
@@ -174,7 +181,7 @@ export function buildGraph(
   ctx: BaseAudioContext,
   recipe: SfxRecipe,
   opts: PlayOptions = {},
-): void {
+): Voice {
   validateRecipe(recipe);
   const when = opts.when ?? ctx.currentTime;
   const seed = opts.seed ?? recipe.seed;
@@ -186,7 +193,26 @@ export function buildGraph(
   master.connect(pan);
   pan.connect(opts.destination ?? ctx.destination);
 
-  recipe.layers.forEach((layer, i) => buildLayer(ctx, layer, i, recipe, v, master, when));
+  const sinks: AudioScheduledSourceNode[] = [];
+  recipe.layers.forEach((layer, i) => buildLayer(ctx, layer, i, recipe, v, master, when, sinks));
+
+  let stopped = false;
+  return {
+    stop(fadeMs = 20) {
+      if (stopped) return;
+      stopped = true;
+      const now = ctx.currentTime;
+      const end = now + fadeMs / 1000;
+      try {
+        master.gain.cancelScheduledValues(now);
+        master.gain.setValueAtTime(master.gain.value, now);
+        master.gain.linearRampToValueAtTime(0, end);
+      } catch { /* param already torn down */ }
+      for (const node of sinks) {
+        try { node.stop(end); } catch { /* already stopped/ended */ }
+      }
+    },
+  };
 }
 
 /**
