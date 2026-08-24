@@ -2,6 +2,7 @@ import type { SfxRecipe } from "../lib/recipe";
 import { uiPresets } from "./ui";
 import { mechPresets } from "./mech";
 import { weaponPresets } from "./weapons";
+import { meleePresets } from "./melee";
 import { fxPresets } from "./fx";
 
 export interface PresetFamily {
@@ -14,6 +15,7 @@ export const families: PresetFamily[] = [
   { id: "ui", name: "UI", presets: uiPresets },
   { id: "mech", name: "Mechanical", presets: mechPresets },
   { id: "weapons", name: "Weapons", presets: weaponPresets },
+  { id: "melee", name: "Melee & Materials", presets: meleePresets },
   { id: "fx", name: "Impacts & FX", presets: fxPresets },
 ];
 

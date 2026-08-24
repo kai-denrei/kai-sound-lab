@@ -8,7 +8,31 @@ public trail.
 
 ---
 
-## 2026-08-24 — Milestone 2: mechanical switchgear, weapons, ordnance, gore
+## 2026-08-24 — Melee & Materials: the damping continuum
+
+[decision] **Fifth family: Melee & Materials** — sword clash, mace vs wood /
+stone / armor / flesh. 27 presets total.
+
+[insight] **Materials are data, not code.** Every impact in the family is
+the same four-part anatomy (contact + body + modes + texture); the material
+is just the mode table. Metal = inharmonic ratios (1.0/1.47/2.13/3.82/5.19)
+with long unequal decays; wood = near-harmonic modes killed in 60 ms; stone
+= two modes under 25 ms plus fracture grit; flesh = no modes at all, only a
+lowpass slamming shut. The five presets sit on one axis — the **damping
+continuum** — and as decay approaches zero, material identity migrates from
+the resonance into the noise texture. Not one new engine primitive was
+needed.
+
+[insight] **Size transposes, material persists.** The armor hit reuses the
+sword's exact mode ratios at a 480 Hz base instead of 1120 Hz — bigger
+object, lower modes, same fingerprint. That one substitution makes blade and
+plate audibly the same material but audibly different objects, which is the
+modal model earning its keep.
+
+[insight] **The causal garnish sells the event.** Sword scrape, falling
+stone debris, the single dulled bone knock in the flesh hit — small noise
+layers that resonance can't express but that recruit the listener's whole
+causal interpretation. Cheap to add, disproportionate in effect.
 
 [decision] **POC validated → scope opens to three new families.** Mechanical
 (aircraft switch, tactile/clicky keyboard), Weapons (three lasers, 9mm,
