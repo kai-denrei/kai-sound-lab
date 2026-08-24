@@ -11,9 +11,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="cb" content="650a69eb">
-  <link rel="icon" type="image/svg+xml" href="/cb-shapes/37.svg?v=650a69eb">
-  <script src="/cb-badge.js?v=650a69eb" defer></script>
+  <meta name="cb" content="5d98edc8">
+  <link rel="icon" type="image/svg+xml" href="/cb-shapes/29.svg?v=5d98edc8">
+  <script src="/cb-badge.js?v=5d98edc8" defer></script>
   </head>
   <body>
     <header class="faceplate">
@@ -23,6 +23,7 @@
       </div>
       <nav class="tabs" aria-label="Views">
         <button class="tab is-active" data-tab="lab" aria-pressed="true">Lab</button>
+        <button class="tab" data-tab="library" aria-pressed="false">Library</button>
         <button class="tab" data-tab="devlog" aria-pressed="false">Devlog</button>
         <button class="version-chip" id="version-chip" title="Build token — opens the devlog">
           v<span id="version-token">dev</span>
@@ -40,10 +41,20 @@
       </main>
     </div>
 
+    <div id="view-library" class="view is-hidden">
+      <aside class="rack" aria-label="Curated library">
+        <p class="rack-label" id="library-label"></p>
+        <ul id="library-list"></ul>
+      </aside>
+      <main class="panel" id="library-panel">
+        <p class="empty">Select a sound from a curated set.</p>
+      </main>
+    </div>
+
     <div id="view-devlog" class="view is-hidden">
       <main class="devlog" id="devlog-body" aria-label="Developer log"></main>
     </div>
 
-    <script type="module" src="/src/app/main.ts?v=650a69eb"></script>
+    <script type="module" src="/src/app/main.ts?v=5d98edc8"></script>
   </body>
 </html>

@@ -5,6 +5,8 @@ import type { SfxRecipe } from "../lib/recipe";
 import { audioBufferToWav, buildGraph, renderOffline } from "../lib";
 import { drawWaveform } from "./draw";
 import { renderMarkdown } from "./markdown";
+import { initLibrary } from "./library";
+import { markPlaying, sweepPlayhead } from "./scope";
 
 /** The lab app is a consumer of src/lib — it holds no synthesis logic. */
 
@@ -23,8 +25,11 @@ const $ = <T extends HTMLElement>(sel: string): T => {
 
 /* ---------- tabs & version badge ---------- */
 
-function showTab(name: "lab" | "devlog"): void {
+type TabName = "lab" | "library" | "devlog";
+
+function showTab(name: TabName): void {
   $("#view-lab").classList.toggle("is-hidden", name !== "lab");
+  $("#view-library").classList.toggle("is-hidden", name !== "library");
   $("#view-devlog").classList.toggle("is-hidden", name !== "devlog");
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) => {
     const active = b.dataset.tab === name;
@@ -35,7 +40,7 @@ function showTab(name: "lab" | "devlog"): void {
 
 function initTabs(): void {
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) =>
-    b.addEventListener("click", () => showTab(b.dataset.tab as "lab" | "devlog")),
+    b.addEventListener("click", () => showTab(b.dataset.tab as TabName)),
   );
   // The version chip and the cache-busting corner badge both open the devlog:
   // the build token is the doorway to the story of how the build got here.
@@ -121,37 +126,6 @@ function buildCard(
 
     void thumbBuffer(recipe).then((buf) => drawWaveform(canvas, buf));
   }
-}
-
-/* ---------- playhead ---------- */
-
-const playingTimeouts = new WeakMap<HTMLElement, number>();
-
-/** Hold the "playing" glow on the scope for the whole audible span. */
-function markPlaying(wrap: HTMLElement, totalMs: number): void {
-  wrap.classList.add("is-playing");
-  const prev = playingTimeouts.get(wrap);
-  if (prev !== undefined) clearTimeout(prev);
-  playingTimeouts.set(
-    wrap,
-    window.setTimeout(() => wrap.classList.remove("is-playing"), totalMs),
-  );
-}
-
-/**
- * Sweep the cursor across the scope in sync with one playback. The scope
- * x-axis is time (0 → master.durMs), so a linear sweep tracks the waveform
- * underneath it. Reduced-motion users get the border glow only.
- */
-function sweepPlayhead(wrap: HTMLElement, head: HTMLElement, durMs: number, delayMs = 0): void {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  head.animate(
-    [
-      { transform: "translateX(0)", opacity: 1 },
-      { transform: `translateX(${wrap.clientWidth - 2}px)`, opacity: 1 },
-    ],
-    { duration: durMs, delay: delayMs, easing: "linear", fill: "none" },
-  );
 }
 
 /* ---------- detail panel ---------- */
@@ -287,3 +261,4 @@ function selectAndAudition(recipe: SfxRecipe): void {
 $("#devlog-body").innerHTML = renderMarkdown(devlogRaw);
 initTabs();
 buildRack(selectAndAudition);
+initLibrary(ensureCtx);

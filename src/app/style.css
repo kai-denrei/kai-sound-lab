@@ -398,3 +398,50 @@ table.params th { color: var(--ink-soft); font-weight: 500; }
 @media (prefers-reduced-motion: no-preference) {
   .preset-card, .tab, .controls button { transition: border-color 120ms, background 120ms; }
 }
+
+/* ---------- library tab ---------- */
+
+.license-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--phosphor);
+  background: var(--phosphor-soft);
+  border: 1px solid var(--phosphor);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.attribution { margin: 0.9rem 0 0.2rem; }
+
+.attr-line {
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.set-line { color: var(--ink-soft); font-size: 0.9rem; }
+
+.set-download {
+  width: 100%;
+  margin: 6px 0 10px;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  background: var(--panel);
+  border: 1px dashed var(--grid);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.set-download:hover { color: var(--phosphor); border-color: var(--phosphor); }
+
+.preset-card.is-unavailable { opacity: 0.4; pointer-events: none; }
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
