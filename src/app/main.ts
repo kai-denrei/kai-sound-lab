@@ -1,6 +1,6 @@
 import "./style.css";
 import devlogRaw from "../../DEVLOG.md?raw";
-import { uiPresets } from "../presets/ui";
+import { allPresets, families } from "../presets";
 import type { SfxRecipe } from "../lib/recipe";
 import { audioBufferToWav, buildGraph, renderOffline } from "../lib";
 import { drawWaveform } from "./draw";
@@ -65,7 +65,23 @@ async function thumbBuffer(recipe: SfxRecipe): Promise<AudioBuffer> {
 
 function buildRack(onSelect: (r: SfxRecipe) => void): void {
   const list = $("#preset-list");
-  for (const recipe of uiPresets) {
+  $(".rack-label").textContent =
+    `${families.length} families · ${allPresets.length} presets`;
+  for (const family of families) {
+    const heading = document.createElement("li");
+    heading.className = "rack-family";
+    heading.textContent = family.name;
+    list.append(heading);
+    for (const recipe of family.presets) buildCard(list, recipe, onSelect);
+  }
+}
+
+function buildCard(
+  list: HTMLElement,
+  recipe: SfxRecipe,
+  onSelect: (r: SfxRecipe) => void,
+): void {
+  {
     const li = document.createElement("li");
     const card = document.createElement("button");
     card.className = "preset-card";

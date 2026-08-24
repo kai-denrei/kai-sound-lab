@@ -43,6 +43,8 @@ export interface FilterSpec {
   freqHz: number;
   q?: number;
   gainDb?: number;
+  /** Sweep the cutoff over time — explosion tails, wet squelches. */
+  env?: PitchEnv;
 }
 
 export interface Layer {
@@ -55,6 +57,12 @@ export interface Layer {
   /** Oscillator layers only; ignored for noise. */
   pitchEnv?: PitchEnv;
   filter?: FilterSpec;
+  /**
+   * tanh saturation, 0..2. Increases spectral density — gunshot crack,
+   * explosion body, heavy lasers. Applied after the filter, before the
+   * amp envelope.
+   */
+  drive?: number;
 }
 
 /** Perceptual target, 0..1 each. Searchable; not derived from the graph. */
@@ -150,6 +158,10 @@ export function validateRecipe(r: SfxRecipe): void {
       fail(`layer "${layer.id}" peak out of 0..1`);
     if (layer.source.kind === "noise" && layer.pitchEnv)
       fail(`layer "${layer.id}" is noise but has a pitchEnv`);
+    if (layer.drive !== undefined && (layer.drive < 0 || layer.drive > 2))
+      fail(`layer "${layer.id}" drive out of 0..2`);
+    if (layer.filter?.env && layer.filter.env.toHz <= 0)
+      fail(`layer "${layer.id}" filter env target must be positive`);
   }
   const p = r.perception;
   for (const [k, v] of Object.entries(p))

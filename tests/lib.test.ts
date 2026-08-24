@@ -4,6 +4,7 @@ import { generateNoise } from "../src/lib/noise";
 import { encodeWav } from "../src/lib/wav";
 import { validateRecipe, type SfxRecipe } from "../src/lib/recipe";
 import { uiPresets } from "../src/presets/ui";
+import { allPresets, families } from "../src/presets";
 
 describe("prng", () => {
   it("is deterministic for a given seed", () => {
@@ -99,28 +100,43 @@ describe("wav encoder", () => {
 });
 
 describe("recipe validation and preset integrity", () => {
-  it("all 10 UI presets validate", () => {
+  it("expected family sizes", () => {
     expect(uiPresets).toHaveLength(10);
-    for (const p of uiPresets) expect(() => validateRecipe(p)).not.toThrow();
+    expect(families.map((f) => [f.id, f.presets.length])).toEqual([
+      ["ui", 10],
+      ["mech", 3],
+      ["weapons", 5],
+      ["fx", 4],
+    ]);
   });
 
-  it("all UI presets are procedural-original (two-tier law)", () => {
-    for (const p of uiPresets) {
+  it("all presets validate", () => {
+    for (const p of allPresets) expect(() => validateRecipe(p)).not.toThrow();
+  });
+
+  it("all presets are procedural-original (two-tier law)", () => {
+    for (const p of allPresets) {
       expect(p.provenance.type).toBe("procedural-original");
     }
   });
 
   it("all presets carry education claims with tagged basis", () => {
-    for (const p of uiPresets) {
+    for (const p of allPresets) {
       expect(p.education.claims.length).toBeGreaterThan(0);
       for (const c of p.education.claims)
         expect(["evidence", "convention"]).toContain(c.basis);
     }
   });
 
-  it("preset ids are unique and seeds are unique", () => {
-    expect(new Set(uiPresets.map((p) => p.id)).size).toBe(uiPresets.length);
-    expect(new Set(uiPresets.map((p) => p.seed)).size).toBe(uiPresets.length);
+  it("preset ids are unique and seeds are unique across all families", () => {
+    expect(new Set(allPresets.map((p) => p.id)).size).toBe(allPresets.length);
+    expect(new Set(allPresets.map((p) => p.seed)).size).toBe(allPresets.length);
+  });
+
+  it("rejects out-of-range drive", () => {
+    const bad = structuredClone(uiPresets[0]) as SfxRecipe;
+    bad.layers[0].drive = 3;
+    expect(() => validateRecipe(bad)).toThrow(/drive out of 0..2/);
   });
 
   it("rejects a layer running past master duration", () => {

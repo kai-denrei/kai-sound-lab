@@ -37,6 +37,23 @@ function computeVariation(recipe: SfxRecipe, seed: number, amount: number): Inst
   return { pitchMul, gainMul, delayAddS };
 }
 
+/**
+ * Normalized tanh curve: y = tanh(kx)/tanh(k), k = 1 + drive·9.
+ * Normalization keeps output within [-1,1] so drive raises density,
+ * not level — the report's "saturation after gain control" advice.
+ */
+function driveCurve(drive: number): Float32Array {
+  const n = 1025;
+  const k = 1 + drive * 9;
+  const norm = Math.tanh(k);
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = Math.tanh(k * x) / norm;
+  }
+  return curve;
+}
+
 function buildLayer(
   ctx: BaseAudioContext,
   layer: Layer,
@@ -95,8 +112,25 @@ function buildLayer(
       Q: layer.filter.q ?? 1,
       gain: layer.filter.gainDb ?? 0,
     });
+    if (layer.filter.env) {
+      const { toHz, timeMs, curve: fCurve } = layer.filter.env;
+      f.frequency.setValueAtTime(layer.filter.freqHz, t0);
+      if (fCurve === "exp") {
+        f.frequency.exponentialRampToValueAtTime(Math.max(10, toHz), t0 + timeMs / 1000);
+      } else {
+        f.frequency.linearRampToValueAtTime(Math.max(10, toHz), t0 + timeMs / 1000);
+      }
+    }
     head.connect(f);
     head = f;
+  }
+  if (layer.drive) {
+    const shaper = new WaveShaperNode(ctx, {
+      curve: driveCurve(layer.drive),
+      oversample: "2x",
+    });
+    head.connect(shaper);
+    head = shaper;
   }
   head.connect(gain);
   gain.connect(out);

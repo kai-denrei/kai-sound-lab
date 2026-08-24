@@ -119,6 +119,19 @@ body {
 
 #preset-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
 
+.rack-family {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--grid);
+  padding-bottom: 0.25rem;
+  margin: 0.6rem 0.2rem 0;
+}
+
+.rack-family:first-child { margin-top: 0; }
+
 .preset-card {
   width: 100%;
   display: grid;

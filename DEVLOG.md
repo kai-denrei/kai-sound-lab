@@ -8,7 +8,46 @@ public trail.
 
 ---
 
-## 2026-08-24 — Scaffold, core library, first ten sounds
+## 2026-08-24 — Milestone 2: mechanical switchgear, weapons, ordnance, gore
+
+[decision] **POC validated → scope opens to three new families.** Mechanical
+(aircraft switch, tactile/clicky keyboard), Weapons (three lasers, 9mm,
+.50 cal), Impacts & FX (close/distant explosion, mortar launch, gore splat).
+Twelve new presets, 22 total. The rack now groups by family.
+
+[decision] **Two engine primitives added, and only two.** `drive` (a
+normalized tanh waveshaper per layer — gunshot crack, explosion density) and
+filter envelopes (cutoff ramps — collapsing explosion tails, wet squelches).
+The tanh curve is normalized by `tanh(k)` so drive raises spectral density
+without raising level — saturation after gain control, per the report.
+Granular, FM, and delay lines stayed out; nothing in these twelve sounds
+needed them.
+
+[insight] **A damped sine layer IS a modal resonator.** The planned "modal
+resonator bank" primitive turned out to be unnecessary: a sine oscillator
+with a 1 ms attack and exponential decay is exactly one mode. The aircraft
+switch's metal ring is three inharmonic sine layers (1560/2470/3890 Hz) with
+unequal decays — the modal-synthesis result from the impact-perception
+literature, expressed in primitives the engine already had.
+
+[insight] **Caliber is spectrum, not volume.** The .50 cal is the 9mm plus:
+a concussion layer whose lowpass collapses 900→250 Hz, a 48 Hz sub, double
+decay, heavier drive — at a *lower* master gain than the pistol. Size lives
+in low-frequency energy and decay length; if "bigger gun" is only "louder",
+the mix is already lost. Same lesson inverted for distance: the distant
+explosion is defined by what's *removed* (the crack, the highs).
+
+[insight] **Organic = irregular timing.** The gore splat's three squish
+blips land at 30/70/115 ms — deliberately uneven. Regular spacing reads as
+mechanical; irregular micro-events read as liquid/organic. That plus a
+fast-closing lowpass is the entire "wet" illusion — no samples, three
+bandpassed noise bursts.
+
+[finding] **Loud-but-short needs headroom management.** Multi-layer
+transients (crack at 0.95 + blast at 0.7 + thump at 0.6) sum past full
+scale at onset; master gains for weapons/explosions sit at 0.7–0.8 to
+compensate. A proper peak-normalization pass on export (render once,
+measure, scale) is the obvious next engine step — noted, not yet built.
 
 [decision] **The recipe is the canonical asset, not the WAV.** A sound in
 this library is `synthesis graph + parameters + taxonomy + perceptual target
