@@ -7,6 +7,7 @@ import { drawWaveform } from "./draw";
 import { markPlaying, sweepPlayhead } from "./scope";
 import { jumpTo, registerJump } from "./crosslink";
 import { addVoice, stopAll } from "./transport";
+import { assetUrl, decodeBuffer, fetchBytes, playBuffer } from "./audio-assets";
 
 /** The library tab: curated open-source sets, attributed, downloadable. */
 
@@ -15,36 +16,6 @@ const $ = <T extends HTMLElement>(sel: string): T => {
   if (!el) throw new Error(`missing element: ${sel}`);
   return el;
 };
-
-const assetUrl = (file: string): string => `${import.meta.env.BASE_URL}${file}`;
-
-/* raw bytes cache (zip downloads) and decoded cache (playback/thumbs) */
-const bytesCache = new Map<string, Promise<Uint8Array>>();
-const bufferCache = new Map<string, Promise<AudioBuffer>>();
-
-function fetchBytes(file: string): Promise<Uint8Array> {
-  let p = bytesCache.get(file);
-  if (!p) {
-    p = fetch(assetUrl(file)).then(async (r) => {
-      if (!r.ok) throw new Error(`${r.status} fetching ${file}`);
-      return new Uint8Array(await r.arrayBuffer());
-    });
-    bytesCache.set(file, p);
-    p.catch(() => bytesCache.delete(file)); // allow retry after failure
-  }
-  return p;
-}
-
-function decodeSound(ctx: AudioContext, s: CuratedSound): Promise<AudioBuffer> {
-  let p = bufferCache.get(s.id);
-  if (!p) {
-    // decodeAudioData detaches the buffer — copy so bytesCache stays valid
-    p = fetchBytes(s.file).then((b) => ctx.decodeAudioData(b.slice().buffer));
-    bufferCache.set(s.id, p);
-    p.catch(() => bufferCache.delete(s.id));
-  }
-  return p;
-}
 
 const LICENSE_LABEL: Record<string, string> = {
   "CC0-1.0": "CC0",
@@ -61,7 +32,7 @@ export async function auditionCurated(id: string): Promise<void> {
   const s = curatedSounds.find((x) => x.id === id);
   if (!s) throw new Error(`unknown curated sound: ${id}`);
   const ctx = ctxProvider();
-  const buf = await decodeSound(ctx, s);
+  const buf = await decodeBuffer(ctx, s.id, s.file);
   const voice = playBuffer(ctx, buf);
   addVoice(voice, s.durMs);
 }
@@ -160,7 +131,7 @@ function buildCard(list: HTMLElement, s: CuratedSound, ensureCtx: () => AudioCon
   li.append(card);
   list.append(li);
 
-  void decodeSound(ensureCtx(), s)
+  void decodeBuffer(ensureCtx(), s.id, s.file)
     .then((buf) => drawWaveform(canvas, buf))
     .catch(() => card.classList.add("is-unavailable"));
 }
@@ -206,33 +177,9 @@ function addDownloadRow(list: HTMLElement, setId: string): void {
   list.append(li);
 }
 
-function playBuffer(ctx: AudioContext, buf: AudioBuffer): import("../lib").Voice {
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  const gain = ctx.createGain();
-  src.connect(gain);
-  gain.connect(ctx.destination);
-  src.start();
-  let stopped = false;
-  return {
-    stop(fadeMs = 20) {
-      if (stopped) return;
-      stopped = true;
-      const now = ctx.currentTime;
-      const end = now + fadeMs / 1000;
-      try {
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(gain.gain.value, now);
-        gain.gain.linearRampToValueAtTime(0, end);
-      } catch { /* torn down */ }
-      try { src.stop(end); } catch { /* already stopped */ }
-    },
-  };
-}
-
 function selectAndAudition(s: CuratedSound, ensureCtx: () => AudioContext): void {
   showDetail(s, ensureCtx);
-  void decodeSound(ensureCtx(), s).then((buf) => {
+  void decodeBuffer(ensureCtx(), s.id, s.file).then((buf) => {
     const voice = playBuffer(ensureCtx(), buf);
     addVoice(voice, s.durMs);
     markPlaying($("#lib-scope-wrap"), s.durMs);
@@ -277,14 +224,14 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
     <p class="set-line">${set.name} — ${set.blurb}
       ${set.mirrorsFamily ? `<em>Mirrors the <strong>${set.mirrorsFamily}</strong> synth family.</em>` : ""}</p>`;
 
-  void decodeSound(ensureCtx(), s).then((buf) =>
+  void decodeBuffer(ensureCtx(), s.id, s.file).then((buf) =>
     drawWaveform($("#lib-scope") as unknown as HTMLCanvasElement, buf),
   );
 
   let abTimer: number | undefined;
 
   $("#lib-play").addEventListener("click", () => {
-    void decodeSound(ensureCtx(), s).then((buf) => {
+    void decodeBuffer(ensureCtx(), s.id, s.file).then((buf) => {
       const voice = playBuffer(ensureCtx(), buf);
       addVoice(voice, s.durMs);
       markPlaying($("#lib-scope-wrap"), s.durMs);
@@ -319,7 +266,7 @@ function showDetail(s: CuratedSound, ensureCtx: () => AudioContext): void {
       };
       try {
         const ctx = ensureCtx();
-        const buf = await decodeSound(ctx, s);
+        const buf = await decodeBuffer(ctx, s.id, s.file);
         const recordingVoice = playBuffer(ctx, buf);
         addVoice(recordingVoice, s.durMs);
         markPlaying($("#lib-scope-wrap"), s.durMs);
