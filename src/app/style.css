@@ -123,7 +123,9 @@ body {
   margin: 0 0 0.7rem 0.2rem;
 }
 
-#preset-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+#preset-list, #library-list, #creators-list {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem;
+}
 
 .rack-group { margin-top: 0.35rem; }
 .rack-group:first-child { margin-top: 0; }
@@ -457,3 +459,104 @@ table.params th { color: var(--ink-soft); font-weight: 500; }
 .mirror-row .section-label { margin: 0; }
 .mirror-row a { font-size: 0.85rem; }
 .mirror-row button { font-size: 0.75rem; padding: 3px 10px; }
+
+/* ---------- creators tab ---------- */
+
+/* Creator name over its handle, in the creator-level rack header. */
+.creator-name { display: flex; flex-direction: column; gap: 0.1rem; }
+.creator-handle {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: none;
+  color: var(--ink-soft);
+}
+
+/* A pack nests inside its creator — one more collapsible level than the
+   other two racks, indented so the hierarchy reads without a guide line. */
+.rack-group.is-pack { margin-left: 0.5rem; }
+.rack-group.is-pack > .rack-family { font-size: 0.64rem; }
+
+/* Divider rows inside a pack: a label, not a control. */
+.rack-subgroup {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0.5rem 0 -0.15rem 0.2rem;
+}
+.rack-subgroup:first-child { margin-top: 0; }
+
+/* Pinned row at the top of a pack — where curated sets put Download. */
+.pack-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.2rem;
+}
+.pack-link, .credit-copy {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  padding: 4px 7px;
+  border-radius: 4px;
+  border: 1px dashed var(--grid);
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-decoration: none;
+  cursor: pointer;
+}
+.pack-link:hover, .credit-copy:hover {
+  color: var(--phosphor);
+  border-color: var(--phosphor);
+}
+
+/* Deliberately hosted elsewhere — distinct from .is-unavailable, which
+   means the fetch broke. This card is fine; the audio is just not ours. */
+.preset-card.is-linkout { border-style: dashed; }
+.preset-card.is-linkout canvas { opacity: 0.25; }
+.preset-card.is-linkout .p-meta { color: var(--phosphor); }
+
+.linkout-note {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  margin: 0.6rem 0;
+  max-width: 52ch;
+}
+
+/* Heavier than the library's one-line attribution: these terms are prose,
+   and quoting them verbatim is the point. */
+.creator-block {
+  margin: 1.1rem 0 0.4rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--grid);
+  border-left: 2px solid var(--phosphor);
+  border-radius: 4px;
+  background: var(--panel);
+}
+.creator-block .section-label { margin-top: 0.7rem; }
+.creator-block .section-label:first-child { margin-top: 0; }
+.creator-blurb {
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  max-width: 60ch;
+}
+.license-terms {
+  margin: 0.5rem 0;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--grid);
+  font-size: 0.84rem;
+  font-style: italic;
+  color: var(--ink-soft);
+  max-width: 60ch;
+}
+.credit-note { margin: 0.5rem 0 0; font-size: 0.85rem; }
+.credit-note code {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--phosphor);
+  background: var(--phosphor-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+}

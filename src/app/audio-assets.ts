@@ -48,12 +48,18 @@ export function decodeBuffer(
  * Is this asset actually served? Creator pack audio is gitignored, so the
  * published build has none of it — one cached HEAD per pack decides whether
  * its cards hydrate or render as link-outs, rather than fifty 404s.
+ *
+ * Status alone is not enough. Vite's dev server answers a missing path with
+ * the SPA index.html fallback at 200, and most static hosts can be configured
+ * to do the same, so a bare `r.ok` reports absent audio as present. The
+ * content type is the honest signal: audio/* when the file is really there,
+ * text/html when we were handed the app instead.
  */
 export function assetExists(file: string): Promise<boolean> {
   let p = existsCache.get(file);
   if (!p) {
     p = fetch(assetUrl(file), { method: "HEAD" })
-      .then((r) => r.ok)
+      .then((r) => r.ok && !!r.headers.get("content-type")?.startsWith("audio/"))
       .catch(() => false);
     existsCache.set(file, p);
   }

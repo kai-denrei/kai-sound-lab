@@ -6,6 +6,7 @@ import { audioBufferToWav, buildGraph, renderOffline } from "../lib";
 import { drawWaveform } from "./draw";
 import { renderMarkdown } from "./markdown";
 import { auditionCurated, initLibrary } from "./library";
+import { initCreators } from "./creators";
 import { markPlaying, sweepPlayhead } from "./scope";
 import { jumpTo, registerJump, registerTabSwitcher } from "./crosslink";
 import { mirrorForPreset } from "../curated/mirrors";
@@ -29,12 +30,12 @@ const $ = <T extends HTMLElement>(sel: string): T => {
 
 /* ---------- tabs & version badge ---------- */
 
-type TabName = "lab" | "library" | "devlog";
+type TabName = "lab" | "library" | "creators" | "devlog";
+
+const TABS: TabName[] = ["lab", "library", "creators", "devlog"];
 
 function showTab(name: TabName): void {
-  $("#view-lab").classList.toggle("is-hidden", name !== "lab");
-  $("#view-library").classList.toggle("is-hidden", name !== "library");
-  $("#view-devlog").classList.toggle("is-hidden", name !== "devlog");
+  for (const t of TABS) $(`#view-${t}`).classList.toggle("is-hidden", t !== name);
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((b) => {
     const active = b.dataset.tab === name;
     b.classList.toggle("is-active", active);
@@ -317,7 +318,7 @@ function selectAndAudition(recipe: SfxRecipe): void {
 
 $("#devlog-body").innerHTML = renderMarkdown(devlogRaw);
 initTabs();
-registerTabSwitcher((tab) => showTab(tab === "lab" ? "lab" : "library"));
+registerTabSwitcher((tab) => showTab(tab));
 buildRack(selectAndAudition);
 registerJump("lab", (id) => {
   const card = document.querySelector<HTMLButtonElement>(
@@ -331,3 +332,4 @@ registerJump("lab", (id) => {
   card.scrollIntoView({ block: "nearest" });
 });
 initLibrary(ensureCtx);
+initCreators(ensureCtx);
