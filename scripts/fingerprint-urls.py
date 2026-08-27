@@ -63,6 +63,28 @@ def is_external(url):
     ))
 
 
+MODULE_SCRIPT_PATTERN = re.compile(
+    r'<script\b[^>]*?\btype="module"', re.IGNORECASE
+)
+
+
+def is_module_script(tag_prefix):
+    """
+    ES module entry points must not be fingerprinted.
+
+    A dev server keys its module graph by full URL, so `./crosslink` imported
+    from `main.ts?v=abc` and the same file imported from `library.ts` resolve
+    to two different module records — each with its own copy of any
+    module-level state. Registries and caches silently fork: a value written
+    through one instance is invisible through the other.
+
+    Nothing is lost by skipping them. Bundlers already emit content-hashed
+    filenames for the entry, which is the same cache guarantee by a mechanism
+    that does not fork the graph.
+    """
+    return bool(MODULE_SCRIPT_PATTERN.search(tag_prefix))
+
+
 def apply_token(url, token):
     """Append or replace `v=<token>` query parameter, preserving the rest."""
     if is_external(url):
@@ -112,7 +134,7 @@ def rewrite_html(content, token):
 
     def repl_attr(m):
         before, url, after = m.group(1), m.group(2), m.group(3)
-        if is_external(url):
+        if is_external(url) or is_module_script(before):
             return m.group(0)
         new_url = apply_token(url, token)
         if new_url != url:

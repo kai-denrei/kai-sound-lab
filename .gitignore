@@ -4,3 +4,7 @@
 .DS_Store
 node_modules/
 dist/
+
+# Creator pack audio — licensed for use, not redistribution.
+# Rehydrate with scripts/import-creator-pack.sh; see public/creators/README.md
+public/creators/**/*.wav

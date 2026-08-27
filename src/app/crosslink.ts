@@ -1,6 +1,6 @@
 /** Cross-tab jump registry — breaks the main↔library import cycle. */
 
-export type TabId = "lab" | "library";
+export type TabId = "lab" | "library" | "creators";
 
 let switchTab: ((tab: TabId) => void) | null = null;
 const jumps = new Map<TabId, (id: string) => void>();

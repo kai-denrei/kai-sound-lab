@@ -8,6 +8,88 @@ public trail.
 
 ---
 
+## 2026-08-27 — A Creators tab, and a licence that would not fit the floor
+
+[decision] **Some sound work does not clear the Library's floor, and that is
+the point of a second tab.** The curated library enforces CC0 or CC BY,
+nothing else, checked by `tests/curated.test.ts`. That floor is what lets
+every set be hosted, zipped and shipped. Daniel SoundsGood's *Free Laser
+Weapon Sound Library* is licensed *"non-exclusive license – you're free to
+use this library in your commercial games"*, with credit requested and no
+right to claim it as your own work. That is a grant to **use**, not to
+**redistribute** — so it does not belong in the Library, and folding it in
+would have meant loosening the floor for everything else. Creators is a
+third tab with its own prose-based licence model, and `curated.test.ts` was
+not touched.
+
+[decision] **Terms are quoted verbatim, never paraphrased into a badge.**
+`licenseTerms` holds the creator's own sentence. Flattening prose terms into
+an SPDX-shaped label is how attribution quietly goes wrong; the quote is the
+artefact, and the panel renders it as a quote.
+
+[decision] **The audio is gitignored, and the gate is a fact about the disk
+rather than a flag.** `public/creators/**/*.wav` never enters the repo. The
+app fires one cached HEAD per pack: files present, cards hydrate with
+waveforms, audition and A/B; files absent, cards render as link-outs to the
+creator and nothing else is fetched. Same build, same code path — a flag
+would have been a second source of truth that could disagree with the disk.
+
+[decision] **The import script is the only record of how the files were
+made.** Because the bytes are uncommitted, `scripts/import-creator-pack.sh`
+is what makes them reproducible: 48 kHz/32-bit float to the project's
+44.1 kHz/16-bit convention, kebab-case renaming that preserves each file's
+original ordinal so it traces back to the pack. It deliberately skips the
+peak normalisation the curated sets get — re-levelling a creator's own mix
+sits badly beside "no license to claim as your own work".
+
+[setback] **A 200 is not proof a file exists.** The availability probe first
+checked `r.ok`, and Vite's dev server answers a missing path with the SPA
+`index.html` fallback at 200. So with the audio moved aside the probe
+reported it present, all fifty cards fetched, all fifty failed, and the
+whole rack went dead — `.is-unavailable` sets `pointer-events: none`, so the
+symptom was cards that could not even be clicked. The content type is the
+honest signal: `audio/*` when the file is really there, `text/html` when you
+have been handed the app instead.
+
+[setback] **Every cross-tab jump in dev had been a silent no-op, and the
+cache-busting token was why.** Chasing the Creators A/B mirror link led to a
+pre-existing bug: `bust.sh` appended `?v=<token>` to the `<script
+type="module">` entry, and a dev server keys its module graph by full URL.
+`./crosslink` reached through `main.ts?v=abc` and the same file reached
+through `library.ts` resolved to two different module records, each with its
+own module-level state. `main.ts` registered the tab switcher on one
+instance; `library.ts` registered its jump handler on the other. `jumpTo`'s
+optional-call syntax — `switchTab?.(tab)` — swallowed the mismatch without
+an error, so it failed by doing nothing at all. Production was always fine,
+because the bundler dedupes, which is exactly why it survived this long.
+`transport.ts`'s voice registry and the asset caches were forking the same
+way. Module entry points are no longer fingerprinted; content-hashed
+bundles already give that guarantee without splitting the graph.
+
+[insight] **Optional-call syntax is a good way to lose a bug.** `a?.(x)`
+reads as defensive, but on a registry that is *supposed* to be populated it
+converts a loud failure into silence. Both halves of `jumpTo` were guarded
+that way, so a duplicated module produced no error, no warning, and no
+behaviour — the hardest shape of bug to notice.
+
+[insight] **Gitignoring an asset is not the same as never shipping it.**
+`vite build` copies all of `public/` into `dist/`, so a build run on the
+machine that has the files put all fifty into the output. The gitignore only
+ever protected a build made from a clone. A `closeBundle` hook now deletes
+them after the copy, so the guarantee no longer depends on remembering which
+machine deployed.
+
+[finding] **Curatorial notes came from measurement, not impression.** Fifty
+files is more than can be honestly described by ear in one pass, so peak,
+RMS, attack time, zero-crossing rate and start-to-end energy ratio were
+computed for each. The groups separated cleanly: heavy blasts are
+low-centred and split between instant punches and slow telegraphed swells;
+reloads are bright, quiet and often multi-part; four of the five beams end
+at the level they start, which is what makes them loop under a held trigger.
+Several notes cite those numbers directly.
+
+---
+
 ## 2026-08-24 — Whooshes, and a STOP button that meant rethinking playback
 
 [decision] **Whooshes family: four archetype mirrors.** Swish, air, wind,
